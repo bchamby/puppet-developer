@@ -1,0 +1,40 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+
+  config.hostmanager.enabled = true
+  config.hostmanager.ignore_private_ip = false
+  config.hostmanager.include_offline = true
+
+  config.vm.define "puppet" do |puppet|
+    config.vm.provider "virtualbox" do |v|
+      v.memory = 2048
+    end
+    puppet.vm.box = "centos/7"
+    puppet.vm.hostname = "puppet.example.com"
+    puppet.vm.network :private_network, ip: "10.0.0.10"
+    puppet.hostmanager.aliases = %w(puppet)
+    puppet.vm.provision "shell", inline: <<-SHELL
+      sudo yum update -y
+      sudo rpm -ivh https://yum.puppetlabs.com/puppetlabs-release-pc1-el-7.noarch.rpm
+      sudo yum install puppetserver -y
+      sudo sed -i 's/2g/512m/g' /etc/sysconfig/puppetserver
+    SHELL
+    config.vm.synced_folder "/Users/chamby/Projects/puppet/pluralsight/puppet-developer/vagrant", "/vagrant"
+  end
+
+  config.vm.define "puppet-agent1" do |puppetagent1|
+    puppetagent1.vm.box = "centos/7"
+    puppetagent1.vm.hostname = "puppetagent1.example.com"
+    puppetagent1.vm.network :private_network, ip: "10.0.0.11"
+    puppetagent1.hostmanager.aliases = %w(puppet-agent1)
+  end
+
+  config.vm.define "puppet-agent2" do |puppetagent2|
+    puppetagent2.vm.box = "ARTACK/debian-jessie"
+    puppetagent2.vm.hostname = "puppetagent2.example.com"
+    puppetagent2.vm.network :private_network, ip: "10.0.0.12"
+    puppetagent2.hostmanager.aliases = %w(puppet-agent2)
+  end
+end
